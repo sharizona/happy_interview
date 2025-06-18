@@ -30,6 +30,8 @@
 #### max_unique_value_path
 ```python
 def _max_unique_value_path(node, current_path):
+    if node is None:
+        return 0
     if node.value in current_path:  # Stop if duplicate found
         return 0
     current_path.add(node.value)    # Track history
