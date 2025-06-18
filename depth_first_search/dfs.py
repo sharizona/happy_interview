@@ -204,7 +204,70 @@ class DFS:
         _calculate_tilt(root)
         return total_tilt[0]
 
+    def max_diameter(self, root):
+        """
+        The diameter of a binary tree is the length of the longest path between any two nodes
+        in a tree. This path may or may not pass through the root.
+        :param root:
+        :return:
+        """
+        max_diameter = [0]
+        def _max_diameter(node):
+            if node is None:
+                return 0
+            left_depth = _max_diameter(node.left)
+            right_depth = _max_diameter(node.right)
+            max_diameter[0] = max(max_diameter[0], left_depth + right_depth)
+            return 1 + max(left_depth, right_depth)
+        _max_diameter(root)
+        return max_diameter[0]
 
+    def max_unique_value_path(self, root):
+        """
+        Given a binary tree, find the length of the longest path where each node in the path has a unique value (each node has different value from the other nodes). This path may or may not pass through the root.
+        :param root:
+        :return:
+        """
+        max_length = [0]
+        def _max_unique_value_path(node, current_path):
+            if node is None:
+                return 0
+            if node.value in current_path:
+                return 0
+            current_path.add(node.value)
+            left_length = _max_unique_value_path(node.left, current_path)
+            right_length = _max_unique_value_path(node.right, current_path)
+            max_length[0] = max(max_length[0], 1 + left_length + right_length)
+            """
+            In max_unique_value_path (line 240), the 1 + is needed because we're counting paths that go through both subtrees, and the current node acts as a connection point. We count the current node (the 1), the longest path in the left subtree (left_length), and the longest path in the right subtree (right_length).
+            In max_diameter (line 220), we don't add 1 because we're counting edges between nodes, not nodes themselves. A path's length in terms of edges is always one less than the number of nodes in that path. For example, a path through 3 nodes has 2 edges.
+            """
+            current_path.remove(node.value)
+            return 1 + max(left_length, right_length)
+        _max_unique_value_path(root, set())
+        return max_length[0]
+
+    def max_universal_value_path(self, root):
+        """
+        Given a binary tree, find the length of the longest path where each node in the path has the same value. This path may or may not pass through the root.
+        :param root:
+        :return:
+        """
+        max_length = [0]
+        def _max_universal_value_path(node):
+            if node is None:
+                return 0
+            left_length = _max_universal_value_path(node.left)
+            right_length = _max_universal_value_path(node.right)
+            left_path = right_path = 0
+            if node.left and node.left.value == node.value:
+                left_path = left_length + 1
+            if node.right and node.right.value == node.value:
+                right_path = right_length + 1
+            max_length[0] = max(max_length[0], left_path + right_path)
+            return max(left_path, right_path)
+        _max_universal_value_path(root)
+        return max_length[0]
 
 
 
@@ -304,3 +367,19 @@ if __name__ == "__main__":
     """
     total_tilt = dfs.calculate_tilt(a)
     assert total_tilt == 2, f"Expected 2 but got {total_tilt}"
+
+    # Test the max diameter
+    max_diameter = dfs.max_diameter(a)
+    assert max_diameter == 3, f"Expected 3, but got {max_diameter}"
+
+    # Test the max unique value path
+    """
+        4
+       /   \
+      2     6
+     / \     \  
+    1   3     2
+    The longest path with unique values is 1 -> 2 -> 4 -> 6, which has length 4.
+    """
+    max_unique_value_path = dfs.max_unique_value_path(a)
+    assert max_unique_value_path == 4, f"Expected 4, but got {max_unique_value_path}"
