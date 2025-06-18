@@ -11,9 +11,8 @@ class DFS:
             return ""
         result = root.value
         for neighor in root.neighbors:
-            result = "->".join([result,self.recursive_dfs(neighor)])
+            result = "->".join([result, self.recursive_dfs(neighor)])
         return result
-
 
     def recursive_sum_of_nodes(self, root):
         """
@@ -48,10 +47,10 @@ class DFS:
             return 0
         depth = 0
         for neighbor in root.neighbors:
-            depth = max(depth, 1+ self.recursive_max_depth_of_tree(neighbor))
+            depth = max(depth, 1 + self.recursive_max_depth_of_tree(neighbor))
         return depth
 
-    def recursive_max_depth_path(self,root, current_path=None, max_paths=None, current_depth=0, max_depth=None):
+    def recursive_max_depth_path(self, root, current_path=None, max_paths=None, current_depth=0, max_depth=None):
         """
         This function finds the maximum depth path in a tree using recursion.
         :param root:
@@ -79,7 +78,7 @@ class DFS:
             return max_paths
 
         current_path.append(root.value)
-        current_depth += 1 # current_depth=1
+        current_depth += 1  # current_depth=1
 
         if current_depth > max_depth[0]:
             """
@@ -92,8 +91,9 @@ class DFS:
                Changes to this value need to be visible to all recursive calls.
             """
             max_depth[0] = current_depth
-            max_paths.clear() # clear previous max paths if found deeper path
-            max_paths.append(current_path[:]) # Add a copy of current_path to max_paths. We use current_path[:] to create a shallow copy of the list. If we use current_path directly, we would be appending a reference to the same list object, which would change as we backtrack and modify current_path in subsequent recursive calls.
+            max_paths.clear()  # clear previous max paths if found deeper path
+            max_paths.append(current_path[
+                             :])  # Add a copy of current_path to max_paths. We use current_path[:] to create a shallow copy of the list. If we use current_path directly, we would be appending a reference to the same list object, which would change as we backtrack and modify current_path in subsequent recursive calls.
             # max_paths.append vs max_paths.extend - append adds a single element (a list in this case) to max_paths, while extend would add each element of the list as separate elements in max_paths.
         elif current_depth == max_depth[0]:
             max_paths.append(current_path[:])
@@ -104,7 +104,7 @@ class DFS:
             # When recursive call returns, we still want current_depth=1 here
             # We don't need changes from child calls
 
-        current_path.pop() # Backtrack to explore other paths.
+        current_path.pop()  # Backtrack to explore other paths.
         """
         Why do we use current_path.pop()?
         - When we explore a path down the tree, we add nodes to current_path
@@ -162,6 +162,49 @@ class DFS:
 
         current_path.pop()
         return target_paths
+
+    def recursive_binary_search_tree(self, root):
+        if root is None:
+            return True
+
+        if root.left:
+            if root.left.value > root.value:
+                return False
+            if not self.recursive_binary_search_tree(root.left):
+                return False
+
+        if root.right:
+            if root.right.value < root.value:
+                return False
+            if not self.recursive_binary_search_tree(root.right):
+                return False
+        return True
+
+    def calculate_tilt(self, root):
+        """
+        The tilt of a tree node is defined as the absolute difference between the sum of all left subtree node values and the sum of all right subtree node values. If a node does not have a left child, then the sum of the left subtree is treated as 0. The rule is similar if there the node does not have a right child.
+        The tilt of the whole tree is defined as the sum of all nodes' tilt.
+        :param root:
+        :return:
+        """
+        total_tilt = [0]
+
+        def _calculate_tilt(node):
+            if node is None:
+                return 0
+
+            left_sum = _calculate_tilt(node.left)
+            right_sum = _calculate_tilt(node.right)
+
+            node_tilt = abs(left_sum - right_sum)
+            total_tilt[0] += node_tilt
+
+            return left_sum + right_sum + node.value
+
+        _calculate_tilt(root)
+        return total_tilt[0]
+
+
 
 
 
@@ -222,7 +265,42 @@ if __name__ == "__main__":
     target_paths = dfs.recursive_path_sum(a, 8)
     assert target_paths == [[1, 2, 5]], f"Expected [1, 2, 5] but got {target_paths}"
 
+    # Create a binary search tree for testing
+    from BinarySearchTreeNode import BinarySearchTreeNode
 
+    a = BinarySearchTreeNode(4)
+    b = BinarySearchTreeNode(2)
+    c = BinarySearchTreeNode(6)
+    d = BinarySearchTreeNode(1)
+    e = BinarySearchTreeNode(3)
+    a.left = b
+    a.right = c
+    b.left = e
+    b.right = d
 
+    # Test the recursive binary search tree fasle case
+    is_bst = dfs.recursive_binary_search_tree(a)
+    assert is_bst == False, f"Expected not a binary search tree but got {is_bst}"
 
+    # Test the recursive binary search tree true case
+    b.left = d
+    b.right = e
+    is_bst = dfs.recursive_binary_search_tree(a)
+    assert is_bst == True, f"Expected a binary search tree but got {is_bst}"
 
+    # Test the calculate tile
+    """
+        4
+       /   \
+      2     6
+     / \
+    1   3
+    Node 4: |6-6| = 0
+    Node 2: |1-3| = 2
+    Node 6: |0-0| = 0
+    Node 1: |0-0| = 0
+    Node 3: |0-0| = 0
+    Total tilt = 0 + 2 + 0 + 0 + 0 = 2
+    """
+    total_tilt = dfs.calculate_tilt(a)
+    assert total_tilt == 2, f"Expected 2 but got {total_tilt}"
