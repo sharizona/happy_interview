@@ -7,7 +7,7 @@ class DFS:
         :param root:
         :return:
         """
-        if root is None:
+        if root is None or root.visited:
             return ""
         result = root.value
         for neighor in root.neighbors:
@@ -92,8 +92,7 @@ class DFS:
             """
             max_depth[0] = current_depth
             max_paths.clear()  # clear previous max paths if found deeper path
-            max_paths.append(current_path[
-                             :])  # Add a copy of current_path to max_paths. We use current_path[:] to create a shallow copy of the list. If we use current_path directly, we would be appending a reference to the same list object, which would change as we backtrack and modify current_path in subsequent recursive calls.
+            max_paths.append(current_path[:])  # Add a copy of current_path to max_paths. We use current_path[:] to create a shallow copy of the list. If we use current_path directly, we would be appending a reference to the same list object, which would change as we backtrack and modify current_path in subsequent recursive calls.
             # max_paths.append vs max_paths.extend - append adds a single element (a list in this case) to max_paths, while extend would add each element of the list as separate elements in max_paths.
         elif current_depth == max_depth[0]:
             max_paths.append(current_path[:])
@@ -168,16 +167,13 @@ class DFS:
             return True
 
         if root.left:
-            if root.left.value > root.value:
-                return False
-            if not self.recursive_binary_search_tree(root.left):
+            if root.left.value > root.value or not self.recursive_binary_search_tree(root.left):
                 return False
 
         if root.right:
-            if root.right.value < root.value:
+            if root.right.value < root.value or not self.recursive_binary_search_tree(root.right):
                 return False
-            if not self.recursive_binary_search_tree(root.right):
-                return False
+
         return True
 
     def calculate_tilt(self, root):
@@ -209,16 +205,16 @@ class DFS:
         The diameter of a binary tree is the length of the longest path between any two nodes
         in a tree. This path may or may not pass through the root.
         :param root:
-        :return:
+        :return: the number of edges in the longest path
         """
         max_diameter = [0]
         def _max_diameter(node):
             if node is None:
                 return 0
-            left_depth = _max_diameter(node.left)
-            right_depth = _max_diameter(node.right)
-            max_diameter[0] = max(max_diameter[0], left_depth + right_depth)
-            return 1 + max(left_depth, right_depth)
+            left_depth = _max_diameter(node.left) # left_depth to count the edges from the current node to the deepest leaf in the left subtree
+            right_depth = _max_diameter(node.right) # right_depth to count the edges from the current node to the deepest leaf in the right subtree
+            max_diameter[0] = max(max_diameter[0], left_depth + right_depth) # left_depth + right_depth to count the edges between left and right subtree across the current node
+            return 1 + max(left_depth, right_depth) # +1 to add the edge of the current node to its parent, max(left_depth, right_depth) to propagate the maximum depth of the subtree to its parent
         _max_diameter(root)
         return max_diameter[0]
 
@@ -226,48 +222,122 @@ class DFS:
         """
         Given a binary tree, find the length of the longest path where each node in the path has a unique value (each node has different value from the other nodes). This path may or may not pass through the root.
         :param root:
-        :return:
+        :return: the number of nodes in the longest path
         """
         max_length = [0]
         def _max_unique_value_path(node, current_path):
             if node is None:
                 return 0
             if node.value in current_path:
-                return 0
+                return 0 # If the value is already in the path, we cannot include this node
+
             current_path.add(node.value)
-            left_length = _max_unique_value_path(node.left, current_path)
-            right_length = _max_unique_value_path(node.right, current_path)
-            max_length[0] = max(max_length[0], 1 + left_length + right_length)
-            """
-            In max_unique_value_path (line 240), the 1 + is needed because we're counting paths that go through both subtrees, and the current node acts as a connection point. We count the current node (the 1), the longest path in the left subtree (left_length), and the longest path in the right subtree (right_length).
-            In max_diameter (line 220), we don't add 1 because we're counting edges between nodes, not nodes themselves. A path's length in terms of edges is always one less than the number of nodes in that path. For example, a path through 3 nodes has 2 edges.
-            """
-            current_path.remove(node.value)
-            return 1 + max(left_length, right_length)
+            left_length = _max_unique_value_path(node.left, current_path) # left_length to count the edges from the current node to the deepest leaf in the left subtree with unique values, because the edge between current node to its left child is already counted in the left subtree recursive calls with 1+ in the return statement
+            right_length = _max_unique_value_path(node.right, current_path) # right_length to count the edges from the current node to the deepest leaf in the right subtree with unique values, because the edge between current node to its right child is already counted in the right subtree recursive calls with 1+ in the return statement
+            max_length[0] = max(max_length[0], left_length + right_length)
+            current_path.remove(node.value) # Backtrack: remove current node value from the path
+            return 1 + max(left_length, right_length) # +1 to count the edge between current node to its parent node, max(left_length, right_length) to propagate the maximum length of the subtree to its parent
         _max_unique_value_path(root, set())
+        return max_length[0]
+
+    def max_unique_value_path_another_way(self, root):
+        """
+        Given a binary tree, find the length of the longest path where each node in the path has a unique value (each node has different value from the other nodes). This path may or may not pass through the root.
+        :param root:
+        :return: the number of nodes in the longest path
+        """
+        max_length = [0]
+        def _max_unique_value_path(node, current_path):
+            if node is None:
+                return 0
+            if node.value in current_path:
+                return 0 # If the value is already in the path, we cannot include this node
+
+            current_path.append(node.value)
+            left_length = right_length = 0
+            if node.left:
+                left_length = 1 + _max_unique_value_path(node.left, current_path)
+            if node.right:
+                right_length = 1+ _max_unique_value_path(node.right, current_path)
+            max_length[0] = max(max_length[0], left_length + right_length)
+
+            print(f"current_path {current_path}")
+            print(f"current node {node.value}")
+            print(f"left_length + right_length {left_length} + {right_length}")
+            print(f"max_length {max_length[0]}")
+
+            current_path.remove(node.value) # Backtrack: remove current node value from the path
+            return max(left_length, right_length)
+        _max_unique_value_path(root, [])
         return max_length[0]
 
     def max_universal_value_path(self, root):
         """
         Given a binary tree, find the length of the longest path where each node in the path has the same value. This path may or may not pass through the root.
         :param root:
-        :return:
+        :return: the number of nodes in the longest path
         """
         max_length = [0]
         def _max_universal_value_path(node):
             if node is None:
                 return 0
-            left_length = _max_universal_value_path(node.left)
-            right_length = _max_universal_value_path(node.right)
-            left_path = right_path = 0
+
+            # Initialize current paths
+            left_depth = right_depth = 0
+            # Extend paths if child values match current node value
             if node.left and node.left.value == node.value:
-                left_path = left_length + 1
+                left_depth = 1 + _max_universal_value_path(node.left) # 1 + to count the edge between current node to its left child
             if node.right and node.right.value == node.value:
-                right_path = right_length + 1
-            max_length[0] = max(max_length[0], left_path + right_path)
-            return max(left_path, right_path)
+                right_depth = 1 +  _max_universal_value_path(node.right) # 1 + to count the edge between current node to its right child
+            # Update global max and return current max path
+            max_length[0] = max(max_length[0], left_depth + right_depth)
+            return max(left_depth, right_depth) # return the max path length extending from the current node to its farthest child with the same value
+
         _max_universal_value_path(root)
         return max_length[0]
+
+    def valid_tree(self, n, edges):
+        """
+         given an integer n and a list of undirected edges where each entry in the list is a pair of integers representing an edge between nodes 1 and n. You have to write a function to check whether these edges make up a valid tree.
+         A valid tree is a connected graph with no cycles.
+         Example1:  n = 4, edges = [[0, 1], [2, 3]]
+         Output1: False
+         Example2:  n = 5, edges = [[0, 1], [0, 2], [0, 3], [1, 4]]
+         Output2: True
+        :param n:
+        :param edges:
+        :return:
+        """
+        if n == 0:
+            return True
+
+        from collections import defaultdict
+
+        graph = defaultdict(list)
+        """
+        A defaultdict(list) creates a dictionary that automatically initializes a new empty list [] when accessing a non-existent key, instead of raising a KeyError.
+        This is particularly useful for building adjacency lists in graph representations, where each key (node) maps to a list of its neighbors.
+        """
+        for u, v in edges:
+            graph[u].append(v)
+            graph[v].append(u)
+
+        visited = set()
+
+        def dfs(node, parent):
+            visited.add(node)
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    if not dfs(neighbor, node):
+                        return False
+                elif neighbor != parent:
+                    return False
+            return True
+
+        if not dfs(0, -1):
+            return False
+
+        return len(visited) == n
 
 
 
@@ -377,9 +447,39 @@ if __name__ == "__main__":
         4
        /   \
       2     6
-     / \     \  
-    1   3     2
-    The longest path with unique values is 1 -> 2 -> 4 -> 6, which has length 4.
+     / \     
+    1   3     
+    The longest path with unique values is 1 -> 2 -> 4 -> 6, which has length 3.
     """
     max_unique_value_path = dfs.max_unique_value_path(a)
-    assert max_unique_value_path == 4, f"Expected 4, but got {max_unique_value_path}"
+    assert max_unique_value_path == 3, f"Expected 3, but got {max_unique_value_path}"
+
+    max_unique_value_path_another_way = dfs.max_unique_value_path_another_way(a)
+    assert max_unique_value_path_another_way == 3, f"Expected 3, but got {max_unique_value_path_another_way}"
+
+    # Test the max universal value path
+    """
+          4
+       /     \
+      4       4
+     / \     / \    
+    4   4   4   4           
+
+    The longest path with the same value is 4 -> 4 -> 4 -> 4 , which has length 3.
+    """
+    a = BinarySearchTreeNode(4)
+    b = BinarySearchTreeNode(4)
+    c = BinarySearchTreeNode(4)
+    d = BinarySearchTreeNode(4)
+    e = BinarySearchTreeNode(4)
+    f = BinarySearchTreeNode(4)
+    g = BinarySearchTreeNode(4)
+    a.left = b
+    a.right = c
+    b.left = e
+    b.right = d
+    c.left = f
+    c.right = g
+    max_universal_value_path = dfs.max_universal_value_path(a)
+    assert max_universal_value_path == 4, f"Expected 4, but got {max_universal_value_path}"
+
